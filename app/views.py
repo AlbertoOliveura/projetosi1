@@ -25,16 +25,20 @@ def registro(request):
         nome = request.POST['nome']
         email = request.POST['email']
         senha = request.POST['senha']
+
         try:
             us_temp = Usuario.objects.get(email=email)
             messages.error(request, 'Email ja cadastrado')
+
             return render_to_response('registro.html', {}, context_instance=RequestContext(request))
+
+
         except:
             new_usuario = Usuario(nome=nome, email=email, senha=senha)
             new_usuario.save()
             messages.success(request, 'Usuario criado com sucesso')
             return redirect('/')
-    
+
 
 def login(request):
     if request.method == 'GET':
@@ -66,43 +70,6 @@ def view_pasta(request, id):
     usuario = Usuario.objects.get(email=request.session['email'])
     pasta = Pasta.objects.get(id=id)
     return render_to_response('view_pasta.html', {'pasta': pasta}, context_instance=RequestContext(request))
-
-
-def remove_pasta(request, id):
-    try:
-        pasta = Pasta.objects.get(id=id)
-        pasta.status = False
-        pasta.save()
-        for arq in pasta.arquivo_set.all():
-            arq.status = False
-            arq.save()
-        messages.success(request, 'Pasta removida com sucesso')
-    except:
-        messages.error(request, 'Nao foi possivel remover a pasta')
-    return redirect('/app')
-
-
-def lixeira(request):
-    usuario = Usuario.objects.get(email=request.session['email'])
-    return render_to_response('lixeira.html', {'usuario': usuario}, context_instance=RequestContext(request))
-
-
-def remove_arquivo(request, id):
-    try:
-        usuario = Usuario.objects.get(email=request.session['email'])
-        arquivo = Arquivo.objects.get(id=id)
-        pasta = arquivo.pasta
-        arquivo.status = False
-        arquivo.save()
-        messages.success(request, 'Arquivo removido com sucesso')
-        if pasta:
-            return redirect('/pasta/'+str(pasta.id))
-        else:
-            return redirect('/')
-    except:
-        messages.error(request, 'Nao foi possivel remover o arquivo')
-        return redirect('/')
-        
 
 
 def create_arquivo(request):
@@ -152,36 +119,6 @@ def edit_arquivo(request, id):
         return render_to_response('view_file.html', {'arquivo':arquivo, 'content': content}, context_instance=RequestContext(request))
         
 
-
-def upload_arquivo(request):
-    usuario = Usuario.objects.get(email=request.session['email'])
-    if request.method == 'GET':
-        return render_to_response('upload.html', {'usuario':usuario}, context_instance=RequestContext(request))
-    elif request.method == 'POST':
-        try:
-            nome = request.POST['nome']
-            arquivo = request.FILES['file']
-            tipo = request.POST['tipo']
-            print request.POST
-            if 'pasta' in request.POST:
-                pasta = Pasta.objects.get(id=request.POST['pasta'])
-            else:
-                pasta = None
-            arquivo = Arquivo(nome=nome, tipo=tipo, arquivo=arquivo, pasta=pasta)
-            arquivo.save()
-            usuario.arquivos.add(arquivo)
-            usuario.save()
-            messages.success(request, 'Arquivo adicionado com sucesso')
-            if pasta:
-                return redirect('/pasta/'+str(pasta.id))
-            else:
-                return redirect('/')
-        except:
-            messages.error(request, 'Nao foi possivel adicionar arquivo')
-            return redirect('/')
-        
-        
-
 def nova_pasta(request):
     if request.method == 'GET':
         usuario = Usuario.objects.get(email=request.session['email'])
@@ -204,10 +141,7 @@ def nova_pasta(request):
         except:
             messages.error(request, 'Nao foi possivel criar a pasta')
             return render_to_response('nova_pasta.html', {}, context_instance=RequestContext(request))
-            
-            
-def share_arquivo(request):
-    pass
+
 
 def logout(request):
     request.session.clear()
